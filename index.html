@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GEO Readiness Checker v1.5</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      color: #1f2937;
+      background: #f3f4f6;
+    }
+
+    header {
+      background: #111827;
+      color: #fff;
+      padding: 40px 24px;
+      text-align: center;
+    }
+
+    header h1 {
+      margin: 0 0 12px;
+      font-size: 32px;
+    }
+
+    header p {
+      margin: 0;
+      color: #d1d5db;
+      font-size: 16px;
+    }
+
+    main {
+      max-width: 1100px;
+      margin: 32px auto;
+      padding: 0 20px 48px;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+    }
+
+    h2 {
+      margin-top: 0;
+      color: #111827;
+      font-size: 22px;
+    }
+
+    .description {
+      color: #4b5563;
+      margin-bottom: 18px;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 300px;
+      padding: 16px;
+      border: 1px solid #d1d5db;
+      border-radius: 10px;
+      font-family: Consolas, Monaco, monospace;
+      font-size: 14px;
+      resize: vertical;
+      background: #f9fafb;
+    }
+
+    .button-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+
+    button {
+      border: none;
+      border-radius: 10px;
+      padding: 12px 18px;
+      font-size: 15px;
+      cursor: pointer;
+      background: #111827;
+      color: white;
+    }
+
+    button.secondary {
+      background: #6b7280;
+    }
+
+    button:hover {
+      opacity: 0.92;
+    }
+
+    .score-box {
+      display: grid;
+      grid-template-columns: 180px 1fr;
+      gap: 20px;
+      align-items: center;
+    }
+
+    .score-circle {
+      width: 160px;
+      height: 160px;
+      border-radius: 50%;
+      background: #e5e7eb;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 34px;
+      font-weight: bold;
+      color: #111827;
+      margin: 0 auto;
+      border: 10px solid #d1d5db;
+    }
+
+    .grade {
+      font-size: 20px;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+
+    .result-summary {
+      color: #4b5563;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 16px;
+      overflow: hidden;
+      border-radius: 10px;
+    }
+
+    th, td {
+      border: 1px solid #e5e7eb;
+      padding: 12px;
+      text-align: left;
+      vertical-align: top;
+      font-size: 14px;
+    }
+
+    th {
+      background: #f9fafb;
+      color: #111827;
+    }
+
+    .pass {
+      color: #065f46;
+      font-weight: bold;
+    }
+
+    .fail {
+      color: #991b1b;
+      font-weight: bold;
+    }
+
+    .partial {
+      color: #92400e;
+      font-weight: bold;
+    }
+
+    .tips ul {
+      margin: 8px 0 0 20px;
+      padding: 0;
+    }
+
+    .tips li {
+      margin-bottom: 8px;
+    }
+
+    .small {
+      color: #6b7280;
+      font-size: 13px;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    @media (max-width: 720px) {
+      .score-box {
+        grid-template-columns: 1fr;
+      }
+
+      header h1 {
+        font-size: 26px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>GEO Readiness Checker v1.5</h1>
+    <p>웹페이지 HTML을 붙여넣으면 생성형 AI 검색 노출 준비도를 100점 기준으로 진단합니다.</p>
+  </header>
+
+  <main>
+    <section class="card">
+      <h2>1. 분석할 HTML 붙여넣기</h2>
+      <p class="description">
+        GitHub의 <strong>index.html</strong> 파일 내용을 전체 복사해서 아래 칸에 붙여넣으세요.
+        이 도구는 URL을 직접 크롤링하지 않고, 붙여넣은 HTML 구조를 기준으로 진단합니다.
+      </p>
+
+      <textarea id="htmlInput" placeholder="여기에 index.html 전체 코드를 붙여넣으세요."></textarea>
+
+      <div class="button-row">
+        <button onclick="analyzeHtml()">GEO 점수 진단하기</button>
+        <button class="secondary" onclick="loadBeforeSample()">Before 샘플 불러오기</button>
+        <button class="secondary" onclick="clearInput()">초기화</button>
+      </div>
+    </section>
+
+    <section id="resultSection" class="card hidden">
+      <h2>2. 진단 결과</h2>
+      <div class="score-box">
+        <div class="score-circle"><span id="totalScore">0</span>점</div>
+        <div>
+          <div id="grade" class="grade">진단 전</div>
+          <p id="summary" class="result-summary"></p>
+        </div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>진단 항목</th>
+            <th>점수</th>
+            <th>판정</th>
+            <th>해석</th>
+          </tr>
+        </thead>
+        <tbody id="resultTable"></tbody>
+      </table>
+    </section>
+
+    <section id="tipSection" class="card tips hidden">
+      <h2>3. 개선 제안</h2>
+      <p class="description">After 페이지에서 우선적으로 보완할 항목입니다.</p>
+      <ul id="tipsList"></ul>
+    </section>
+
+    <section class="card">
+      <h2>진단 기준</h2>
+      <p class="description">
+        이 도구는 과제용 v1.5 버전입니다. 실제 AI 검색 노출을 보장하지는 않으며,
+        AI가 웹페이지를 이해하고 인용하기 쉬운 기본 구조를 갖췄는지 점검합니다.
+      </p>
+      <table>
+        <thead>
+          <tr>
+            <th>항목</th>
+            <th>배점</th>
+            <th>기준</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>title 태그</td><td>10점</td><td>페이지 제목이 존재하고 구체적인가</td></tr>
+          <tr><td>meta description</td><td>10점</td><td>검색 결과 요약에 활용될 설명문이 있는가</td></tr>
+          <tr><td>H1 구체성</td><td>10점</td><td>H1이 페이지 주제를 명확히 설명하는가</td></tr>
+          <tr><td>H2 구조</td><td>10점</td><td>H2가 3개 이상 있어 정보 구조가 나뉘는가</td></tr>
+          <tr><td>정의문</td><td>10점</td><td>첫 부분에 “~란” 형태의 설명이 있는가</td></tr>
+          <tr><td>FAQ</td><td>10점</td><td>자주 묻는 질문 또는 Q&A 구조가 있는가</td></tr>
+          <tr><td>작성자·날짜</td><td>10점</td><td>작성자, 작성일, 수정일 등 신뢰 요소가 있는가</td></tr>
+          <tr><td>참고자료·외부 링크</td><td>10점</td><td>외부 출처 또는 참고자료 링크가 있는가</td></tr>
+          <tr><td>JSON-LD</td><td>10점</td><td>구조화 데이터가 포함되어 있는가</td></tr>
+          <tr><td>고유 키워드</td><td>10점</td><td>차별화된 고유 명칭 또는 핵심 키워드가 있는가</td></tr>
+        </tbody>
+      </table>
+      <p class="small">권장 목표: Before 20~45점, After 80점 이상</p>
+    </section>
+  </main>
+
+  <script>
+    function analyzeHtml() {
+      const rawHtml = document.getElementById('htmlInput').value.trim();
+
+      if (!rawHtml) {
+        alert('분석할 HTML 코드를 붙여넣어 주세요.');
+        return;
+      }
+
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(rawHtml, 'text/html');
+      const text = doc.body ? doc.body.innerText.replace(/\s+/g, ' ').trim() : '';
+      const lowerHtml = rawHtml.toLowerCase();
+      const lowerText = text.toLowerCase();
+
+      const title = doc.querySelector('title')?.textContent.trim() || '';
+      const metaDescription = doc.querySelector('meta[name="description"]')?.getAttribute('content')?.trim() || '';
+      const h1 = doc.querySelector('h1')?.textContent.trim() || '';
+      const h2Count = doc.querySelectorAll('h2').length;
+      const linkCount = doc.querySelectorAll('a[href]').length;
+      const jsonLdCount = doc.querySelectorAll('script[type="application/ld+json"]').length;
+
+      const uniqueKeywords = [
+        '제니엘형',
+        '현장직무 ai 비서',
+        '현장직무 AI 비서',
+        'ai 비서 도입 프로세스',
+        'AI 비서 도입 프로세스',
+        '생성형 ai 업무지원',
+        '생성형 AI 업무지원'
+      ];
+
+      const definitionPatterns = ['란 ', '이란 ', '정의', '무엇인가', '의미한다', '기반 업무지원 모델'];
+      const faqPatterns = ['faq', '자주 묻는 질문', '질문과 답변', 'q&a', '<dt>', '<summary>'];
+      const authorDatePatterns = ['작성자', '작성일', '수정일', '업데이트', 'updated', 'author', 'datepublished', 'datemodified'];
+
+      const checks = [];
+
+      checks.push(evaluateTitle(title));
+      checks.push(evaluateMetaDescription(metaDescription));
+      checks.push(evaluateH1(h1));
+      checks.push(evaluateH2(h2Count));
+      checks.push(evaluateDefinition(lowerText, definitionPatterns));
+      checks.push(evaluateFaq(lowerHtml, lowerText, faqPatterns));
+      checks.push(evaluateAuthorDate(lowerHtml, lowerText, authorDatePatterns));
+      checks.push(evaluateLinks(linkCount));
+      checks.push(evaluateJsonLd(jsonLdCount));
+      checks.push(evaluateUniqueKeyword(rawHtml, uniqueKeywords));
+
+      const total = checks.reduce((sum, item) => sum + item.score, 0);
+
+      renderResults(total, checks);
+    }
+
+    function evaluateTitle(title) {
+      if (!title) {
+        return result('title 태그', 0, '부족', 'title 태그가 없습니다. 검색 결과와 AI 요약에서 페이지 주제를 파악하기 어렵습니다.', 'meta title을 추가하세요.');
+      }
+      if (title.length >= 12 && containsRelevantKeyword(title)) {
+        return result('title 태그', 10, '양호', '페이지 제목이 존재하며 현장 AI 관련 키워드를 포함합니다.');
+      }
+      return result('title 태그', 6, '보통', 'title 태그는 있지만 제목이 다소 일반적입니다.', 'After에서는 “제니엘형 현장직무 AI 비서 도입 프로세스”처럼 더 구체적인 제목을 사용하세요.');
+    }
+
+    function evaluateMetaDescription(desc) {
+      if (!desc) {
+        return result('meta description', 0, '부족', 'meta description이 없습니다.', '검색 결과 요약에 쓰일 100~160자 설명문을 추가하세요.');
+      }
+      if (desc.length >= 50) {
+        return result('meta description', 10, '양호', '페이지 요약 설명이 충분히 제공되어 있습니다.');
+      }
+      return result('meta description', 5, '보통', 'meta description은 있으나 설명이 짧습니다.', '핵심 대상, 문제, 해결 방식을 포함해 설명문을 보완하세요.');
+    }
+
+    function evaluateH1(h1) {
+      if (!h1) {
+        return result('H1 구체성', 0, '부족', 'H1 제목이 없습니다.', '페이지마다 하나의 명확한 H1을 추가하세요.');
+      }
+      if (h1.includes('제니엘형') || h1.includes('도입 프로세스') || h1.includes('현장직무 AI 비서')) {
+        return result('H1 구체성', 10, '양호', 'H1이 구체적인 주제와 고유 키워드를 포함합니다.');
+      }
+      if (containsRelevantKeyword(h1)) {
+        return result('H1 구체성', 5, '보통', 'H1이 존재하지만 주제가 넓고 일반적입니다.', 'After에서는 대상 업무와 고유 명칭을 포함한 H1로 바꾸세요.');
+      }
+      return result('H1 구체성', 3, '부족', 'H1이 페이지 주제를 충분히 설명하지 못합니다.', 'H1에 핵심 키워드를 넣으세요.');
+    }
+
+    function evaluateH2(count) {
+      if (count >= 5) {
+        return result('H2 구조', 10, '양호', 'H2 섹션이 충분해 정보 구조가 나뉘어 있습니다.');
+      }
+      if (count >= 3) {
+        return result('H2 구조', 8, '보통', '기본적인 섹션 구조는 갖췄습니다.', 'FAQ, 도입 프로세스, 참고자료 섹션을 추가하면 더 좋습니다.');
+      }
+      if (count >= 1) {
+        return result('H2 구조', 4, '부족', 'H2 섹션 수가 적어 정보 구조가 약합니다.', '최소 3개 이상의 H2 섹션을 구성하세요.');
+      }
+      return result('H2 구조', 0, '부족', 'H2 섹션이 없습니다.', '본문을 여러 H2 섹션으로 나누세요.');
+    }
+
+    function evaluateDefinition(text, patterns) {
+      const hasDefinition = patterns.some(pattern => text.includes(pattern.toLowerCase()));
+      if (hasDefinition) {
+        return result('정의문', 10, '양호', '정의문으로 판단되는 표현이 있습니다.');
+      }
+      if (text.includes('목표로 합니다') || text.includes('활용될 수 있습니다')) {
+        return result('정의문', 3, '부족', '소개 문장은 있으나 AI가 인용하기 쉬운 명확한 정의문은 부족합니다.', '첫 문단에 “제니엘형 현장직무 AI 비서란…” 형태의 정의문을 추가하세요.');
+      }
+      return result('정의문', 0, '부족', '페이지 초반에 개념 정의가 보이지 않습니다.', 'AI 답변에 바로 쓰일 수 있는 한 문장 정의를 추가하세요.');
+    }
+
+    function evaluateFaq(html, text, patterns) {
+      const hasFaq = patterns.some(pattern => html.includes(pattern.toLowerCase()) || text.includes(pattern.toLowerCase()));
+      if (hasFaq) {
+        return result('FAQ', 10, '양호', 'FAQ 또는 Q&A 구조가 포함되어 있습니다.');
+      }
+      return result('FAQ', 0, '부족', 'FAQ 섹션이 없습니다.', 'After에서 검색 질문과 일치하는 FAQ 5개 이상을 추가하세요.');
+    }
+
+    function evaluateAuthorDate(html, text, patterns) {
+      const hasInfo = patterns.some(pattern => html.includes(pattern.toLowerCase()) || text.includes(pattern.toLowerCase()));
+      if (hasInfo) {
+        return result('작성자·날짜', 10, '양호', '작성자 또는 날짜 정보가 포함되어 있습니다.');
+      }
+      return result('작성자·날짜', 0, '부족', '작성자, 작성일, 수정일 정보가 없습니다.', '신뢰성 보완을 위해 작성자와 업데이트 날짜를 추가하세요.');
+    }
+
+    function evaluateLinks(count) {
+      if (count >= 3) {
+        return result('참고자료·외부 링크', 10, '양호', '외부 참고 링크가 충분히 포함되어 있습니다.');
+      }
+      if (count >= 1) {
+        return result('참고자료·외부 링크', 5, '보통', '외부 링크가 있으나 참고자료로는 부족할 수 있습니다.', '정부, 기업, 연구자료 등 신뢰 가능한 링크를 3개 이상 추가하세요.');
+      }
+      return result('참고자료·외부 링크', 0, '부족', '외부 참고자료 링크가 없습니다.', 'AI가 신뢰도를 판단할 수 있도록 관련 출처 링크를 추가하세요.');
+    }
+
+    function evaluateJsonLd(count) {
+      if (count >= 1) {
+        return result('JSON-LD 구조화 데이터', 10, '양호', 'JSON-LD 구조화 데이터가 포함되어 있습니다.');
+      }
+      return result('JSON-LD 구조화 데이터', 0, '부족', '구조화 데이터가 없습니다.', 'Article, FAQPage, Organization 형태의 JSON-LD를 추가하세요.');
+    }
+
+    function evaluateUniqueKeyword(html, keywords) {
+      const hasKeyword = keywords.some(keyword => html.includes(keyword));
+      if (hasKeyword) {
+        return result('고유 키워드', 10, '양호', '고유 키워드 또는 핵심 명칭이 포함되어 있습니다.');
+      }
+      if (html.includes('현장 AI') || html.includes('AI 서비스')) {
+        return result('고유 키워드', 2, '부족', '일반 키워드는 있으나 차별화된 고유 명칭은 없습니다.', 'After에서 “제니엘형 현장직무 AI 비서” 같은 고유 키워드를 반복적으로 사용하세요.');
+      }
+      return result('고유 키워드', 0, '부족', '고유 키워드가 없습니다.', 'AI가 특정 개념으로 기억할 수 있는 명칭을 추가하세요.');
+    }
+
+    function containsRelevantKeyword(value) {
+      return value.includes('AI') || value.includes('ai') || value.includes('현장') || value.includes('서비스') || value.includes('업무');
+    }
+
+    function result(name, score, status, detail, tip = '') {
+      return { name, score, status, detail, tip };
+    }
+
+    function renderResults(total, checks) {
+      document.getElementById('resultSection').classList.remove('hidden');
+      document.getElementById('tipSection').classList.remove('hidden');
+      document.getElementById('totalScore').textContent = total;
+
+      const gradeEl = document.getElementById('grade');
+      const summaryEl = document.getElementById('summary');
+
+      if (total >= 80) {
+        gradeEl.textContent = '우수: After 페이지 수준';
+        summaryEl.textContent = 'AI가 페이지 주제와 구조를 이해하기 쉬운 상태입니다. 실제 검색 노출은 색인, 도메인 신뢰도, 검색 시점에 따라 달라질 수 있습니다.';
+      } else if (total >= 50) {
+        gradeEl.textContent = '보통: 기본 구조는 있으나 보완 필요';
+        summaryEl.textContent = '일반적인 웹페이지 구조는 갖췄지만, GEO 관점에서는 정의문, FAQ, 출처, 구조화 데이터 보완이 필요합니다.';
+      } else {
+        gradeEl.textContent = '부족: Before 페이지 수준';
+        summaryEl.textContent = '사람이 읽기에는 가능하지만, AI가 특정 개념으로 이해하거나 답변에 인용하기에는 정보 구조가 부족합니다.';
+      }
+
+      const tbody = document.getElementById('resultTable');
+      tbody.innerHTML = '';
+
+      checks.forEach(item => {
+        const tr = document.createElement('tr');
+        const statusClass = item.status === '양호' ? 'pass' : item.status === '보통' ? 'partial' : 'fail';
+        tr.innerHTML = `
+          <td>${item.name}</td>
+          <td>${item.score}/10</td>
+          <td class="${statusClass}">${item.status}</td>
+          <td>${item.detail}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      const tipsList = document.getElementById('tipsList');
+      tipsList.innerHTML = '';
+      const tips = checks.filter(item => item.tip).map(item => item.tip);
+
+      if (tips.length === 0) {
+        const li = document.createElement('li');
+        li.textContent = '주요 필수 요소가 대부분 충족되어 있습니다. 이제 실제 AI 검색 테스트로 넘어가도 됩니다.';
+        tipsList.appendChild(li);
+      } else {
+        tips.forEach(tip => {
+          const li = document.createElement('li');
+          li.textContent = tip;
+          tipsList.appendChild(li);
+        });
+      }
+    }
+
+    function loadBeforeSample() {
+      const sample = `<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>현장 AI 서비스 소개</title>
+</head>
+<body>
+  <h1>현장 AI 서비스 소개</h1>
+  <p>현장 AI 서비스는 물류, 배송, 매장 운영, 고객 응대 등 다양한 현장 업무에서 인공지능 기술을 활용해 업무 효율을 높이는 것을 목표로 합니다.</p>
+  <h2>AI가 활용될 수 있는 현장 업무</h2>
+  <p>AI는 현장의 모든 업무를 대체하기보다는, 직원이 더 빠르게 판단하고 반복적인 작업을 줄일 수 있도록 보조하는 방식으로 활용될 수 있습니다.</p>
+  <h2>현장 AI 서비스가 필요한 이유</h2>
+  <p>현장 업무는 사무실 업무와 달리 즉각적인 판단과 빠른 대응이 필요한 경우가 많습니다.</p>
+  <h2>기대 효과</h2>
+  <p>현장 AI 서비스는 직원의 업무 부담을 줄이고, 고객 응대 품질을 일정하게 유지하는 데 도움을 줄 수 있습니다.</p>
+</body>
+</html>`;
+      document.getElementById('htmlInput').value = sample;
+    }
+
+    function clearInput() {
+      document.getElementById('htmlInput').value = '';
+      document.getElementById('resultSection').classList.add('hidden');
+      document.getElementById('tipSection').classList.add('hidden');
+    }
+  </script>
+</body>
+</html>
